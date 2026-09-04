@@ -1,14 +1,18 @@
 const getApiBaseUrl = () => {
-  let envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  let envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  
+  // Auto-detect production Vercel hostname to guarantee connection to Render backend
+  if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
+    if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.includes('vercel.app')) {
+      envUrl = 'https://jansetu-2u15.onrender.com/api';
+    } else {
+      envUrl = 'http://localhost:5001/api';
+    }
+  }
+
   envUrl = envUrl.trim().replace(/\/+$/, '');
   if (!envUrl.endsWith('/api')) {
     envUrl = `${envUrl}/api`;
-  }
-  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !envUrl.includes('onrender.com') && !envUrl.includes('vercel.app')) {
-      return envUrl.replace(/localhost|127\.0\.0\.1/, hostname);
-    }
   }
   return envUrl;
 };
