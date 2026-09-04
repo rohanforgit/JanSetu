@@ -95,7 +95,125 @@ cp .env.example .env
 
 Ensure `backend/.env` contains valid credentials:
 ```env
-PORT=5001
+PORT=5001# JanSetu 🌉
+
+**People's Bridge Between Citizens and Authorities**
+
+JanSetu is a civic-tech platform designed to empower citizens and streamline municipal operations. By leveraging AI for issue categorization and community-driven verification, JanSetu transforms the way urban problems—like potholes, tangled wires, and emergency hazards—are reported and resolved.
+
+---
+
+## 🚨 The Problem
+Traditional civic grievance systems are broken:
+* **Passive Processes:** Citizens file complaints that disappear into black-hole ticketing systems.
+* **Zero Visibility:** No real-time updates on the status of reported issues.
+* **Unilateral Closures:** Authorities often close tickets without verified proof of resolution.
+* **Public Frustration:** Repeat complaints lead to diminished trust in municipal bodies.
+
+## 💡 The Solution
+JanSetu flips the script by introducing a **Product Lifecycle Engine** for civic issues. 
+With just a smartphone, a citizen can snap a picture, record an optional voice note (transcribed by AI), and let the system automatically categorize, prioritize, and route the issue to the correct department. The community can track, support, and verify the final resolution.
+
+---
+
+## ✨ Key Features
+
+* **🎙️ AI-Powered Multimodal Reporting**
+  * Snap a picture of the issue (pothole, fire, hazards).
+  * Record a voice description; our AI transcribes it into actionable text.
+  * Auto-captures precise GPS coordinates.
+
+* **🧠 Gemini AI Civic Intelligence Diagnostic**
+  * Automatically analyzes the image and text.
+  * Assigns **Category** (e.g., Road Damage), **Recommended Department**, **Severity**, and a calculated **Priority Score (0-100)**.
+
+* **🗺️ Civic Activity Network (Live Map & Feed)**
+  * View active issues in your vicinity via an OpenStreetMap integration.
+  * "Support" issues to increase their impact score.
+  * Volunteer for community-driven tasks.
+
+* **شفاف Transparent Resolution Pipeline**
+  * Track an issue through 6 clear stages: *Reported → AI Understands → Community + Authority → Worker Acts → Citizen Verifies → Closed*.
+  * Direct visibility into which field worker is assigned to the task.
+
+* **✅ Mandatory Citizen Verification**
+  * An issue is only officially closed when the reporting citizen confirms the resolution quality based on completion photos provided by the worker.
+
+---
+
+## 📸 Platform Previews
+
+*(Note: Ensure your screenshots are placed in the root or an `/images` folder in your repository to display them correctly.)*
+
+### 1. Landing & Impact
+![Landing Page](Screenshot%202026-09-05%20at%202.55.57%20AM.jpg)
+
+### 2. Issue Capture (Voice & Photo)
+![Capture Issue](Screenshot%202026-09-05%20at%202.57.24%20AM.jpg)
+
+### 3. Civic Activity Network
+![Live Feed & Map](Screenshot%202026-09-05%20at%202.58.24%20AM.jpg)
+
+### 4. AI Diagnostics & Resolution Tracking
+![Issue Detail](Screenshot%202026-09-05%20at%202.59.18%20AM.jpg)
+
+---
+
+## 🚀 How It Works (The Lifecycle)
+
+1. **Report:** Tell JanSetu what's wrong. Snap photo evidence and pin the location.
+2. **AI Understands:** JanSetu identifies issue category, severity score, and responsible department.
+3. **Community + Authority:** People support the issue while municipal authorities coordinate action.
+4. **Worker Acts:** The assigned field worker resolves the physical problem and uploads a completion photo.
+5. **Citizen Verifies:** The person who reported it confirms whether it was actually fixed.
+6. **Impact:** The problem closes, and the contribution counts toward the citizen's civic impact score.
+
+---
+
+## 🛠️ Getting Started (For Developers)
+
+### Prerequisites
+* Node.js (v16+)
+* npm or yarn
+* API Keys (Gemini AI, Google Maps/OpenStreetMap, etc.)
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/jansetu.git
+   cd jansetu
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   Create a `.env` file in the root directory and add your keys:
+   ```env
+   REACT_APP_GEMINI_API_KEY=your_key_here
+   REACT_APP_MAP_KEY=your_key_here
+   ```
+
+4. **Run the application:**
+   ```bash
+   npm start
+   ```
+
+---
+
+## 🤝 Contributing
+We welcome contributions to make our cities better! 
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+## 📄 License
+Distributed under the MIT License. See `LICENSE` for more information.
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/jansetu?retryWrites=true&w=majority
 GEMINI_API_KEY=your_gemini_api_key_1
 JWT_SECRET=jansetu_super_secret_jwt_key_2026
