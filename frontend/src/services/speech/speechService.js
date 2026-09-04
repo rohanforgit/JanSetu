@@ -100,7 +100,8 @@ export class SpeechService {
           userMsg = 'No microphone hardware detected. Please connect a microphone.';
           this.shouldBeListening = false;
         } else if (event.error === 'network') {
-          userMsg = 'Speech network error. Please check your internet connection.';
+          userMsg = 'Voice API unavailable on Brave or strict privacy settings. Please click "Switch to Typing" below to type your report directly.';
+          this.shouldBeListening = false;
         }
 
         this.isListening = false;
