@@ -7,17 +7,15 @@ dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 
-const startServer = async () => {
-  try {
-    await connectDatabase();
-    startAutoReassignDaemon();
-    app.listen(PORT, () => {
-      console.log(`[SERVER] Jansetu backend running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error(`[SERVER FATAL] Failed to start Jansetu backend: ${error.message}`);
-    process.exit(1);
-  }
-};
+const server = app.listen(PORT, () => {
+  console.log(`[SERVER] Jansetu backend listening immediately on port ${PORT}`);
+});
 
-startServer();
+connectDatabase()
+  .then(() => {
+    console.log('[DB] MongoDB connected and ready.');
+    startAutoReassignDaemon();
+  })
+  .catch((err) => {
+    console.error(`[DB ERROR] Connection failed: ${err.message}`);
+  });
