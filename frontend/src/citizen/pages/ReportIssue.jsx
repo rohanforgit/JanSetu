@@ -771,7 +771,7 @@ export const ReportIssue = ({ onNavigate }) => {
                   <button
                     onClick={() => (window.location.hash = `#/track/${dupItem.issueId}`)}
                     style={{
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--color-bg-surface-elevated)',
                       border: '1px solid var(--color-border-default)',
                       borderRadius: 'var(--radius-sm)',
                       padding: '8px 14px',

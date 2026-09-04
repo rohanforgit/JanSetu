@@ -98,7 +98,7 @@ export const Home = ({ onNavigate }) => {
       {/* Hero Section */}
       <section style={{
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--color-bg-surface)',
         borderBottom: '1px solid var(--color-border-default)',
         display: 'flex',
         alignItems: 'center',

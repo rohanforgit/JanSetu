@@ -136,7 +136,7 @@ export const IssueCard = ({ issue, onNavigateTrack }) => {
             <button
               onClick={handleSupport}
               style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--color-bg-surface-elevated)',
                 border: '1px solid var(--color-border-default)',
                 borderRadius: 'var(--radius-sm)',
                 padding: '6px 12px',
@@ -155,7 +155,7 @@ export const IssueCard = ({ issue, onNavigateTrack }) => {
                 e.currentTarget.style.borderColor = 'var(--color-border-hover)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.backgroundColor = 'var(--color-bg-surface-elevated)';
                 e.currentTarget.style.borderColor = 'var(--color-border-default)';
               }}
             >

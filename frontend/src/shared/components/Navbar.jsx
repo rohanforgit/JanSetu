@@ -66,7 +66,7 @@ export const Navbar = ({ currentPath, onNavigate }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#FFFFFF',
+              color: 'var(--color-text-inverse)',
               fontWeight: 800,
               fontSize: 'var(--font-xl)',
               boxShadow: 'var(--shadow-sm)'
