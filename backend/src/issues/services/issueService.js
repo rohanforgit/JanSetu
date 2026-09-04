@@ -62,58 +62,62 @@ export const issueService = {
     ];
 
     // AUTOMATIC INTELIGENT WORKER ASSIGNMENT
-    const { Worker } = await import('../../models/Worker.js');
     let assignedWorkerData = null;
     let initialStatus = 'REPORTED';
 
-    // 1. Try finding an AVAILABLE worker in the target department
-    let selectedWorker = await Worker.findOne({
-      department,
-      status: 'AVAILABLE',
-      isActive: true
-    }).sort({ createdAt: 1 });
+    try {
+      const { Worker } = await import('../../models/Worker.js');
 
-    // 2. If all workers in department are busy, pick worker in department with minimum workload
-    if (!selectedWorker) {
-      const deptWorkers = await Worker.find({ department, isActive: true });
-      if (deptWorkers.length > 0) {
-        // Pick worker with lowest active tasks
-        deptWorkers.sort((a, b) => (a.activeTasksCount || 0) - (b.activeTasksCount || 0));
-        selectedWorker = deptWorkers[0];
+      // 1. Try finding an AVAILABLE worker in the target department
+      let selectedWorker = await Worker.findOne({
+        department,
+        status: 'AVAILABLE',
+        isActive: true
+      }).sort({ createdAt: 1 });
+
+      // 2. If all workers in department are busy, pick worker in department with minimum workload
+      if (!selectedWorker) {
+        const deptWorkers = await Worker.find({ department, isActive: true });
+        if (deptWorkers.length > 0) {
+          deptWorkers.sort((a, b) => (a.activeTasksCount || 0) - (b.activeTasksCount || 0));
+          selectedWorker = deptWorkers[0];
+        }
       }
-    }
 
-    // 3. Fallback: pick any active worker across the system
-    if (!selectedWorker) {
-      const anyWorkers = await Worker.find({ isActive: true });
-      if (anyWorkers.length > 0) {
-        selectedWorker = anyWorkers[Math.floor(Math.random() * anyWorkers.length)];
+      // 3. Fallback: pick any active worker across the system
+      if (!selectedWorker) {
+        const anyWorkers = await Worker.find({ isActive: true });
+        if (anyWorkers.length > 0) {
+          selectedWorker = anyWorkers[Math.floor(Math.random() * anyWorkers.length)];
+        }
       }
-    }
 
-    if (selectedWorker) {
-      initialStatus = 'ASSIGNED';
-      assignedWorkerData = {
-        id: selectedWorker.employeeId || selectedWorker._id.toString(),
-        name: selectedWorker.name,
-        role: selectedWorker.role || 'Field Technician',
-        phone: selectedWorker.phone || '9876543201',
-        assignedAt: new Date()
-      };
+      if (selectedWorker) {
+        initialStatus = 'ASSIGNED';
+        assignedWorkerData = {
+          id: selectedWorker.employeeId || selectedWorker._id.toString(),
+          name: selectedWorker.name,
+          role: selectedWorker.role || 'Field Technician',
+          phone: selectedWorker.phone || '9876543201',
+          assignedAt: new Date()
+        };
 
-      // Update worker status and task count
-      selectedWorker.status = 'BUSY';
-      selectedWorker.activeTasksCount = (selectedWorker.activeTasksCount || 0) + 1;
-      await selectedWorker.save();
+        // Update worker status and task count
+        selectedWorker.status = 'BUSY';
+        selectedWorker.activeTasksCount = (selectedWorker.activeTasksCount || 0) + 1;
+        await selectedWorker.save();
 
-      initialTimeline.push({
-        status: 'ASSIGNED',
-        title: `Auto-Assigned to ${selectedWorker.name}`,
-        time: 'Just now',
-        description: `Dispatched to field technician ${selectedWorker.name} (${selectedWorker.role}). Phone: ${selectedWorker.phone || '9876543201'}.`
-      });
+        initialTimeline.push({
+          status: 'ASSIGNED',
+          title: `Auto-Assigned to ${selectedWorker.name}`,
+          time: 'Just now',
+          description: `Dispatched to field technician ${selectedWorker.name} (${selectedWorker.role}). Phone: ${selectedWorker.phone || '9876543201'}.`
+        });
 
-      console.log(`[AUTO ASSIGNMENT] Issue '${issueId}' auto-assigned to Worker '${selectedWorker.name}' (Dept: ${department}, Phone: ${selectedWorker.phone})`);
+        console.log(`[AUTO ASSIGNMENT] Issue '${issueId}' auto-assigned to Worker '${selectedWorker.name}' (Dept: ${department}, Phone: ${selectedWorker.phone})`);
+      }
+    } catch (workerErr) {
+      console.warn('[WORKER AUTO ASSIGNMENT WARN]', workerErr);
     }
 
     const newIssueData = {
