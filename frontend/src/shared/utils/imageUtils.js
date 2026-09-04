@@ -21,7 +21,7 @@ export const resolveImageUrl = (imgSrc, fallback = 'https://images.unsplash.com/
     if (backendOrigin) {
       backendOrigin = backendOrigin.trim().replace(/\/api\/?$/, '');
     } else if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.includes('vercel.app')) {
-      backendOrigin = 'https://jansetu-2u15.onrender.com';
+      backendOrigin = 'https://jansetu-2ul5.onrender.com';
     } else if (typeof window !== 'undefined' && window.location) {
       backendOrigin = `${window.location.protocol}//${window.location.hostname}:5001`;
     } else {

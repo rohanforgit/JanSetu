@@ -4,7 +4,7 @@ const getApiBaseUrl = () => {
   // Auto-detect production Vercel hostname to guarantee connection to Render backend
   if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1')) {
     if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname.includes('vercel.app')) {
-      envUrl = 'https://jansetu-2u15.onrender.com/api';
+      envUrl = 'https://jansetu-2ul5.onrender.com/api';
     } else {
       envUrl = 'http://localhost:5001/api';
     }
