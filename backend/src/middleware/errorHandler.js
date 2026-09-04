@@ -3,6 +3,10 @@ import { errorResponse } from '../utils/response.js';
 export const errorHandler = (err, req, res, next) => {
   console.error(`[EXPRESS ERROR] ${req.method} ${req.originalUrl}:`, err);
 
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
   if (err.name === 'ValidationError') {
     return errorResponse(res, err.message, 'VALIDATION_ERROR', 400);
   }
