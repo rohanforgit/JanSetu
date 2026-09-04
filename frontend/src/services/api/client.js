@@ -47,7 +47,7 @@ export const apiClient = {
     }
   },
 
-  post: async (endpoint, data) => {
+  post: async (endpoint, data, retries = 1) => {
     try {
       const headers = getHeaders();
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -57,6 +57,11 @@ export const apiClient = {
       });
       return await handleResponse(response);
     } catch (error) {
+      if (retries > 0) {
+        console.warn(`[API POST RETRY] Retrying ${endpoint} after network hiccup...`);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return apiClient.post(endpoint, data, retries - 1);
+      }
       console.error(`[API POST ERROR] ${endpoint}:`, error);
       throw normalizeError(error);
     }
