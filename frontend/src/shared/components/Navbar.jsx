@@ -4,6 +4,7 @@ import { useAuth, ROLES } from '../../services/auth/AuthProvider';
 import { Button } from './Button';
 import { NotificationBell } from './notifications/NotificationBell';
 import { LanguageSelector } from './LanguageSelector';
+import { ThemeToggle } from '../theme/ThemeToggle';
 import { useTranslation } from '../i18n/LanguageContext';
 
 export const Navbar = ({ currentPath, onNavigate }) => {
@@ -124,6 +125,7 @@ export const Navbar = ({ currentPath, onNavigate }) => {
 
         {/* Right Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          <ThemeToggle />
           <LanguageSelector />
           <NotificationBell onNavigate={onNavigate} />
 

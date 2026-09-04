@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth, ROLES } from './services/auth/AuthProvider';
 import { LanguageProvider } from './shared/i18n/LanguageContext';
+import { ThemeProvider } from './shared/theme/ThemeContext';
 import { Navbar } from './shared/components/Navbar';
 import { Footer } from './shared/components/Footer';
 
@@ -135,10 +136,12 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
