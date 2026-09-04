@@ -18,29 +18,14 @@ const app = express();
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-
-      // Allow any local dev origin or Vercel preview/production deployments
-      const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-      const isVercel = /\.vercel\.app$/.test(origin);
-      if (isLocalhost || isVercel || process.env.NODE_ENV !== 'production') {
-        return callback(null, true);
-      }
-
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-      if (origin === clientUrl) {
-        return callback(null, true);
-      }
-
-      return callback(new Error('CORS Policy restriction: Origin not allowed.'));
-    },
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin']
   })
 );
+
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
