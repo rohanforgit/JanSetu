@@ -29,6 +29,4 @@ const otpSchema = new mongoose.Schema(
   }
 );
 
-otpSchema.index({ mobile: 1 });
-
 export const Otp = mongoose.model('Otp', otpSchema);
