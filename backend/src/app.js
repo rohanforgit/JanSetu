@@ -16,17 +16,28 @@ dotenv.config();
 
 const app = express();
 
-// Bulletproof CORS Middleware for Vercel & Production Deployments
+// Bulletproof CORS Configuration for Vercel & Production Deployments
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Dynamically reflect origin to satisfy credentials: true without wildcard '*'
+      callback(null, origin || true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin', 'Cache-Control'],
+    optionsSuccessStatus: 200
+  })
+);
+
+app.options('*', cors());
+
+// Additional header safeguard for all responses
 app.use((req, res, next) => {
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control'
-  );
-  
+  if (req.headers.origin) {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
