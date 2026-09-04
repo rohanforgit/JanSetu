@@ -192,42 +192,19 @@ export const ReportIssue = ({ onNavigate }) => {
     } catch (aiErr) {
       console.error('[AI PROCESS ERROR]', aiErr);
 
-      // Smart rule fallback for fire / electrical / road issues
-      let fallbackCat = 'Road Damage';
-      let fallbackDept = 'Roads & Infrastructure';
-      let fallbackSev = 'HIGH';
-      let fallbackPrio = 85;
-
-      const lowerText = textToProcess.toLowerCase();
-      if (lowerText.includes('fire') || lowerText.includes('smoke') || lowerText.includes('explosion') || lowerText.includes('flame')) {
-        fallbackCat = 'Fire Hazard';
-        fallbackDept = 'Fire & Emergency Services';
-        fallbackSev = 'CRITICAL';
-        fallbackPrio = 98;
-      } else if (lowerText.includes('electric') || lowerText.includes('wire') || lowerText.includes('current') || lowerText.includes('transformer')) {
-        fallbackCat = 'Electrical Hazard';
-        fallbackDept = 'Electricity & Power Board';
-        fallbackSev = 'HIGH';
-        fallbackPrio = 90;
-      } else if (lowerText.includes('garbage') || lowerText.includes('waste')) {
-        fallbackCat = 'Garbage';
-        fallbackDept = 'Solid Waste Management';
-        fallbackSev = 'MEDIUM';
-        fallbackPrio = 75;
-      } else if (lowerText.includes('water') || lowerText.includes('leak')) {
-        fallbackCat = 'Water Leakage';
-        fallbackDept = 'Jal Board / Water Works';
-        fallbackSev = 'HIGH';
-        fallbackPrio = 82;
-      }
-
+      // Safe fallback when AI network call fails: require visual re-verification instead of assuming emergency
       setAiAnalysis({
-        category: fallbackCat,
-        department: fallbackDept,
-        severity: fallbackSev,
-        priority: fallbackPrio,
-        summary: textToProcess.slice(0, 60),
-        reasoning: `Civic issue analyzed by JanSetu AI. Categorized under ${fallbackDept} based on report indicators.`
+        isCivicIssue: false,
+        confidence: 0.1,
+        evidenceStatus: 'INVALID_EVIDENCE',
+        consistency: 'UNKNOWN',
+        category: 'UNCONFIRMED',
+        department: 'NOT ASSIGNED',
+        severity: 'N/A',
+        priority: 0,
+        summary: textToProcess.slice(0, 60) || 'Unverified Report',
+        description: 'AI vision service was temporarily unavailable to verify the uploaded photo. Please retake photo or enter details manually.',
+        reasoning: 'Visual verification could not be completed. Manual confirmation or photo re-take is required before routing.'
       });
       setStep(4);
     } finally {
@@ -617,21 +594,22 @@ export const ReportIssue = ({ onNavigate }) => {
 
   // SCREEN 4: SEVERITY BASED ON DESCRIPTION & SELECT/EDIT DETAILS
   if (step === 4) {
-    const isNonCivic = aiAnalysis?.isCivicIssue === false || aiAnalysis?.category === 'UNKNOWN' || aiAnalysis?.category === 'OUT OF CONTEXT';
+    const isNonCivic = aiAnalysis?.isCivicIssue === false || aiAnalysis?.category === 'UNKNOWN' || aiAnalysis?.category === 'OUT OF CONTEXT' || aiAnalysis?.category === 'UNCONFIRMED' || aiAnalysis?.evidenceStatus === 'CONTRADICTORY' || aiAnalysis?.evidenceStatus === 'INVALID_EVIDENCE' || aiAnalysis?.evidenceStatus === 'NEEDS_BETTER_PHOTO';
     const isCriticalOrHigh = aiAnalysis?.severity === 'CRITICAL' || aiAnalysis?.severity === 'HIGH';
 
     if (isNonCivic) {
+      const displayTitle = aiAnalysis?.issueTitle || (aiAnalysis?.evidenceStatus === 'CONTRADICTORY' ? 'CLAIM NOT VISUALLY VERIFIED' : 'EVIDENCE NOT VERIFIED');
       return (
         <div className="container" style={{ maxWidth: '640px', paddingTop: 'var(--space-8)', paddingBottom: 'var(--space-12)' }}>
           <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
             <span style={{ fontSize: '11px', color: 'var(--color-status-danger)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.08em' }}>
-              STEP 3 OF 4: AI CIVIC VALIDATION
+              STEP 3 OF 4: AI CIVIC EVIDENCE VALIDATION
             </span>
             <h1 style={{ fontSize: 'var(--font-3xl)', fontWeight: 900, color: 'var(--color-status-danger)', marginTop: '4px' }}>
-              OUT OF CONTEXT — NON-CIVIC IMAGE DETECTED
+              ⚠️ {displayTitle}
             </h1>
             <p style={{ fontSize: 'var(--font-xs)', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-              The uploaded image or report is out of context and does not show a recognizable municipal civic issue.
+              The uploaded image does not provide sufficient visual evidence of a public municipal civic issue.
             </p>
           </div>
 
@@ -642,13 +620,13 @@ export const ReportIssue = ({ onNavigate }) => {
 
             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-6)', textAlign: 'left' }}>
               <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-status-danger)', marginBottom: '4px' }}>
-                ⚠️ AI Stage 1 Diagnostic Result: OUT OF CONTEXT
+                ⚠️ AI Stage 1 Diagnostic Result: {aiAnalysis?.evidenceStatus || 'EVIDENCE NOT VERIFIED'}
               </div>
               <p style={{ fontSize: 'var(--font-xs)', color: 'var(--color-text-primary)', margin: 0, lineHeight: 1.5 }}>
-                {aiAnalysis?.description || "The uploaded image or report is out of context and does not show a recognizable municipal civic issue (e.g. selfie, person, notebook, document, food, or non-civic object)."}
+                {aiAnalysis?.reasoning || aiAnalysis?.description || "The uploaded image does not provide sufficient visual evidence of the claimed civic issue."}
               </p>
               <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '6px' }}>
-                Category: <strong>OUT OF CONTEXT</strong> • Department: <strong>OUT OF CONTEXT</strong> • Severity: <strong>OUT OF CONTEXT</strong>
+                Category: <strong>{aiAnalysis?.category || 'UNCONFIRMED'}</strong> • Department: <strong>{aiAnalysis?.department || 'NOT ASSIGNED'}</strong> • Severity: <strong>{aiAnalysis?.severity || 'N/A'}</strong>
               </div>
             </div>
 

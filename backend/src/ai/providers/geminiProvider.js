@@ -24,71 +24,81 @@ export const geminiProvider = {
     }
 
     let lastError = null;
+    const candidateModels = [
+      process.env.GEMINI_VISION_MODEL,
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+      'gemini-3.6-flash'
+    ].filter((m) => m && typeof m === 'string' && m.trim() !== '');
 
-    // Try each API key in the rotation pool sequentially
+    const uniqueModels = [...new Set(candidateModels)];
+
+    // Try each API key and model combination
     for (let i = 0; i < apiKeys.length; i++) {
       const apiKey = apiKeys[i];
-      const model = process.env.GEMINI_VISION_MODEL || 'gemini-3.6-flash';
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-      try {
-        const parts = [
-          { text: `${SYSTEM_PROMPT}\n\n${buildUserPrompt(issueData)}` }
-        ];
+      for (const model of uniqueModels) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        // Add Multimodal Photo Evidence (base64 data URLs or HTTP/HTTPS image URLs)
-        if (Array.isArray(issueData.evidence) && issueData.evidence.length > 0) {
-          for (const item of issueData.evidence) {
-            const imgSrc = typeof item === 'string' ? item : item?.url;
-            if (typeof imgSrc === 'string' && imgSrc.trim() !== '') {
-              if (imgSrc.startsWith('data:image/')) {
-                const matches = imgSrc.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-                if (matches && matches.length === 3) {
-                  parts.push({
-                    inlineData: {
-                      mimeType: matches[1],
-                      data: matches[2]
-                    }
-                  });
-                }
-              } else if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://')) {
-                try {
-                  const imgController = new AbortController();
-                  const imgTimeout = setTimeout(() => imgController.abort(), 5000);
-                  const imgRes = await fetch(imgSrc, { signal: imgController.signal });
-                  clearTimeout(imgTimeout);
-                  if (imgRes.ok) {
-                    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-                    const mimeType = contentType.split(';')[0].trim() || 'image/jpeg';
-                    const buffer = await imgRes.arrayBuffer();
-                    const base64Data = Buffer.from(buffer).toString('base64');
+        try {
+          const parts = [
+            { text: `${SYSTEM_PROMPT}\n\n${buildUserPrompt(issueData)}` }
+          ];
+
+          // Add Multimodal Photo Evidence (base64 data URLs or HTTP/HTTPS image URLs)
+          if (Array.isArray(issueData.evidence) && issueData.evidence.length > 0) {
+            for (const item of issueData.evidence) {
+              const imgSrc = typeof item === 'string' ? item : item?.url;
+              if (typeof imgSrc === 'string' && imgSrc.trim() !== '') {
+                if (imgSrc.startsWith('data:image/')) {
+                  const matches = imgSrc.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+                  if (matches && matches.length === 3) {
                     parts.push({
                       inlineData: {
-                        mimeType,
-                        data: base64Data
+                        mimeType: matches[1],
+                        data: matches[2]
                       }
                     });
                   }
-                } catch (imgError) {
-                  console.warn(`[GEMINI WARN] Failed to fetch HTTP image evidence: ${imgError.message}`);
+                } else if (imgSrc.startsWith('http://') || imgSrc.startsWith('https://')) {
+                  try {
+                    const imgController = new AbortController();
+                    const imgTimeout = setTimeout(() => imgController.abort(), 5000);
+                    const imgRes = await fetch(imgSrc, { signal: imgController.signal });
+                    clearTimeout(imgTimeout);
+                    if (imgRes.ok) {
+                      const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+                      const mimeType = contentType.split(';')[0].trim() || 'image/jpeg';
+                      const buffer = await imgRes.arrayBuffer();
+                      const base64Data = Buffer.from(buffer).toString('base64');
+                      parts.push({
+                        inlineData: {
+                          mimeType,
+                          data: base64Data
+                        }
+                      });
+                    }
+                  } catch (imgError) {
+                    console.warn(`[GEMINI WARN] Failed to fetch HTTP image evidence: ${imgError.message}`);
+                  }
                 }
               }
             }
           }
-        }
 
-        const payload = {
-          contents: [
-            {
-              role: 'user',
-              parts
+          const payload = {
+            contents: [
+              {
+                role: 'user',
+                parts
+              }
+            ],
+            generationConfig: {
+              response_mime_type: 'application/json',
+              temperature: 0.1
             }
-          ],
-          generationConfig: {
-            response_mime_type: 'application/json',
-            temperature: 0.2
-          }
-        };
+          };
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 25000);
@@ -157,10 +167,11 @@ export const geminiProvider = {
         } else {
           lastError = error;
         }
-        console.warn(`[GEMINI KEY ${i + 1}/${apiKeys.length} ERROR] ${error.message}. Trying next available key...`);
+        console.warn(`[GEMINI KEY ${i + 1}/${apiKeys.length} / MODEL ${model} ERROR] ${error.message}. Trying next available model/key...`);
       }
     }
-
-    throw lastError || new Error('All configured Gemini API keys in rotation pool failed.');
   }
+
+  throw lastError || new Error('All configured Gemini API keys in rotation pool failed.');
+}
 };

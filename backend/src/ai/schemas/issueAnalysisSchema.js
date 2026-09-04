@@ -34,28 +34,54 @@ export const validateIssueAnalysisSchema = (data) => {
   const rawConfidence = typeof data.confidence === 'number' && !isNaN(data.confidence) ? data.confidence : 0.9;
   const confidence = Number(rawConfidence.toFixed(2));
 
-  const isExplicitOutOfContext = data.category === 'OUT OF CONTEXT' || data.category === 'OUT_OF_CONTEXT';
-  const hasValidCategory = ALLOWED_CATEGORIES.includes(data.category) && data.category !== 'UNKNOWN' && !isExplicitOutOfContext;
-  const isCivic = (data.isCivicIssue === true || hasValidCategory) && !isExplicitOutOfContext && confidence >= threshold;
+  const evidenceStatus = data.evidenceStatus || (data.isCivicIssue === false ? (data.consistency === 'CONTRADICTORY' ? 'CONTRADICTORY' : 'INVALID_EVIDENCE') : 'VERIFIED');
+  const consistency = data.consistency || (data.isCivicIssue === false ? 'CONTRADICTORY' : 'MATCH');
+  const isExplicitNonCivicCategory = data.category === 'OUT OF CONTEXT' || data.category === 'OUT_OF_CONTEXT' || data.category === 'UNCONFIRMED' || data.category === 'UNKNOWN';
+  const isExplicitNonCivicDept = data.department === 'NOT ASSIGNED' || data.department === 'OUT OF CONTEXT' || data.department === 'UNKNOWN';
 
-  // STRICT CONTRACT FOR EXPLICIT OUT-OF-CONTEXT / NON-CIVIC IMAGES
+  const isCivic = data.isCivicIssue === true
+    && evidenceStatus === 'VERIFIED'
+    && consistency !== 'CONTRADICTORY'
+    && !isExplicitNonCivicCategory
+    && !isExplicitNonCivicDept
+    && confidence >= threshold;
+
+  // STRICT CONTRACT FOR EXPLICIT OUT-OF-CONTEXT / NON-CIVIC / CONTRADICTORY IMAGES
   if (!isCivic) {
+    const isContradictory = evidenceStatus === 'CONTRADICTORY' || consistency === 'CONTRADICTORY';
+    const isNeedsBetterPhoto = evidenceStatus === 'NEEDS_BETTER_PHOTO';
+
+    const defaultTitle = isContradictory
+      ? 'CLAIM NOT VISUALLY VERIFIED'
+      : (isNeedsBetterPhoto ? 'NEEDS BETTER PHOTO' : 'INSUFFICIENT / INVALID CIVIC EVIDENCE');
+
+    const defaultReasoning = isContradictory
+      ? 'Your voice description mentions a civic issue, but the uploaded image does not provide visual evidence to support or verify it.'
+      : 'The uploaded image does not provide sufficient visual evidence of a public municipal civic issue.';
+
     return {
       isCivicIssue: false,
-      confidence,
-      issueTitle: 'OUT OF CONTEXT',
-      summary: 'OUT OF CONTEXT',
+      confidence: Math.min(confidence, 0.4),
+      evidenceStatus: isContradictory ? 'CONTRADICTORY' : (isNeedsBetterPhoto ? 'NEEDS_BETTER_PHOTO' : 'INVALID_EVIDENCE'),
+      consistency: isContradictory ? 'CONTRADICTORY' : 'UNKNOWN',
+      visualIssueDetected: false,
+      issueTitle: typeof data.issueTitle === 'string' && data.issueTitle.trim().length > 0 && !data.issueTitle.includes('UNKNOWN')
+        ? data.issueTitle.trim()
+        : defaultTitle,
+      summary: defaultTitle,
       description: typeof data.description === 'string' && data.description.trim().length > 0 && !data.description.includes('UNKNOWN')
         ? data.description.trim()
-        : 'The uploaded image or report is out of context and does not show a recognizable municipal civic issue.',
-      category: 'OUT OF CONTEXT',
-      department: 'OUT OF CONTEXT',
-      severity: 'OUT OF CONTEXT',
+        : defaultReasoning,
+      category: 'UNCONFIRMED',
+      department: 'NOT ASSIGNED',
+      severity: 'N/A',
       priority: 0,
       reasoning: typeof data.reasoning === 'string' && data.reasoning.trim().length > 0 && !data.reasoning.includes('UNKNOWN')
         ? data.reasoning.trim()
-        : 'The uploaded media is out of context (e.g., selfie, person, paper, notebook, food, or non-civic object).',
-      photoDescription: 'Out of context / non-civic media detected.',
+        : defaultReasoning,
+      photoDescription: typeof data.photoDescription === 'string' && data.photoDescription.trim().length > 0
+        ? data.photoDescription.trim()
+        : 'Out of context / unverified image evidence provided.',
       detectedLanguage: 'en'
     };
   }
@@ -78,6 +104,9 @@ export const validateIssueAnalysisSchema = (data) => {
   return {
     isCivicIssue: true,
     confidence,
+    evidenceStatus: 'VERIFIED',
+    consistency: data.consistency || 'MATCH',
+    visualIssueDetected: true,
     issueTitle: summary,
     summary,
     description: typeof data.description === 'string' && data.description.trim().length > 0 && data.description !== 'UNKNOWN' && data.description !== 'OUT OF CONTEXT' ? data.description.trim() : summary,

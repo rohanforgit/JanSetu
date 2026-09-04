@@ -52,6 +52,20 @@ export const groqProvider = {
       }
 
       const parsed = JSON.parse(rawText);
+
+      // Groq is a text-only LLM. If a photo evidence was attached, Groq CANNOT visually verify it.
+      const hasPhoto = Array.isArray(issueData.evidence) && issueData.evidence.length > 0;
+      if (hasPhoto && parsed.isCivicIssue === true) {
+        parsed.isCivicIssue = false;
+        parsed.evidenceStatus = 'INVALID_EVIDENCE';
+        parsed.consistency = 'UNKNOWN';
+        parsed.category = 'UNCONFIRMED';
+        parsed.department = 'NOT ASSIGNED';
+        parsed.severity = 'N/A';
+        parsed.priority = 0;
+        parsed.reasoning = 'Photo evidence attached but visual AI verification was unavailable. Please re-verify or upload a clear photo.';
+      }
+
       const validated = validateIssueAnalysisSchema(parsed);
 
       return {

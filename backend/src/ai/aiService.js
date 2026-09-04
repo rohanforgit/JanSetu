@@ -117,22 +117,32 @@ function classifyIssueSmart(category, text = '', hasPhoto = false) {
   const content = `${category || ''} ${text || ''}`.toLowerCase();
 
   // NON-CIVIC / OUT OF CONTEXT KEYWORDS CHECK (STAGE 1)
-  const nonCivicKeywords = ['person', 'selfie', 'human', 'face', 'notebook', 'handwritten', 'paper', 'textbook', 'food', 'dog', 'cat', 'blank', 'screen', 'laptop', 'furniture', 'sofa', 'bed', 'shirt', 'dress', 'shoe'];
+  const nonCivicKeywords = ['person', 'selfie', 'human', 'face', 'portrait', 'notebook', 'handwritten', 'paper', 'textbook', 'food', 'dog', 'cat', 'blank', 'screen', 'laptop', 'furniture', 'sofa', 'bed', 'shirt', 'dress', 'shoe'];
   const hasNonCivicWord = nonCivicKeywords.some((w) => content.includes(w));
 
-  // Explicit out of context keyword match
-  if (hasNonCivicWord && !content.includes('pothole') && !content.includes('fire') && !content.includes('leak') && !content.includes('garbage') && !content.includes('electric') && !content.includes('drain') && !content.includes('road')) {
+  // If non-civic media indicators exist (selfie, face, person, food, etc.), REJECT as non-civic / contradictory evidence!
+  if (hasNonCivicWord) {
+    const mentionsEmergency = content.includes('fire') || content.includes('smoke') || content.includes('flame') || content.includes('explosion') || content.includes('gas leak');
+
     return {
       isCivicIssue: false,
-      confidence: 0.98,
-      issueTitle: 'OUT OF CONTEXT',
-      summary: 'OUT OF CONTEXT',
-      description: 'The uploaded image or report is out of context and does not show a recognizable municipal civic issue.',
-      category: 'OUT OF CONTEXT',
-      department: 'OUT OF CONTEXT',
-      severity: 'OUT OF CONTEXT',
+      confidence: 0.2,
+      evidenceStatus: mentionsEmergency ? 'CONTRADICTORY' : 'INVALID_EVIDENCE',
+      consistency: mentionsEmergency ? 'CONTRADICTORY' : 'UNKNOWN',
+      visualIssueDetected: false,
+      issueTitle: mentionsEmergency ? 'CLAIM NOT VISUALLY VERIFIED' : 'INSUFFICIENT / INVALID CIVIC EVIDENCE',
+      summary: mentionsEmergency ? 'CLAIM NOT VISUALLY VERIFIED' : 'INSUFFICIENT / INVALID CIVIC EVIDENCE',
+      description: mentionsEmergency
+        ? 'Your voice description mentions a fire, but the uploaded image does not provide visual evidence to support or verify it.'
+        : 'The uploaded image or report appears to be out of context and does not show a recognizable municipal civic issue.',
+      category: 'UNCONFIRMED',
+      department: 'NOT ASSIGNED',
+      severity: 'N/A',
       priority: 0,
-      reasoning: 'The uploaded media is out of context (person, paper, notebook, food, or non-civic object).'
+      reasoning: mentionsEmergency
+        ? 'Your voice description mentions a fire, but the uploaded image does not provide visual evidence to support or verify it. Please upload a clear photo of the reported hazard.'
+        : 'The uploaded image does not provide sufficient visual evidence of a public municipal civic issue.',
+      photoDescription: 'Selfie / non-civic image evidence detected with no visual proof of civic hazard.'
     };
   }
 
