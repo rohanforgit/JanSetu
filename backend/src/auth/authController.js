@@ -208,10 +208,10 @@ export const authController = {
       }
 
       const cleanMobile = mobile.trim().replace(/\s+/g, '');
-      // Generate a dynamic 6-digit OTP code (e.g. 443005, 817293)
-      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      // FIXED DEMO/TESTING OTP: 123456
+      const generatedOtp = '123456';
       const otpHash = await bcrypt.hash(generatedOtp, 10);
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour validity
 
       const { Otp } = await import('../models/Otp.js');
       await Otp.findOneAndUpdate(
@@ -220,20 +220,25 @@ export const authController = {
         { upsert: true, returnDocument: 'after' }
       );
 
-      // Attempt Twilio API Dispatch
-      const { twilioService } = await import('../services/sms/twilioService.js');
-      const twilioRes = await twilioService.sendOTP(cleanMobile, generatedOtp);
+      // Attempt Twilio API Dispatch (if configured)
+      let providerMethod = 'DEV_FALLBACK';
+      try {
+        const { twilioService } = await import('../services/sms/twilioService.js');
+        const twilioRes = await twilioService.sendOTP(cleanMobile, generatedOtp);
+        if (twilioRes && twilioRes.method) providerMethod = twilioRes.method;
+      } catch (twilioErr) {
+        console.warn('[TWILIO DISPATCH WARN]', twilioErr);
+      }
 
-      console.log(`[AUTH API] OTP '${generatedOtp}' generated for mobile '${cleanMobile}' via ${twilioRes.method}`);
+      console.log(`[AUTH API] Fixed test OTP '123456' generated for mobile '${cleanMobile}'`);
       return successResponse(
         res,
         {
           message: `OTP sent successfully to ${cleanMobile}`,
           mobile: cleanMobile,
-          provider: twilioRes.method,
-          // Include generated OTP in dev response if Twilio trial restricts delivery
-          devOtp: twilioRes.method === 'DEV_FALLBACK' ? generatedOtp : undefined,
-          devNote: twilioRes.method === 'DEV_FALLBACK' ? `SMS/WhatsApp queued. (Generated Code: ${generatedOtp})` : 'OTP sent via Twilio.'
+          provider: providerMethod,
+          devOtp: '123456',
+          devNote: 'Test OTP Code is 123456'
         },
         200
       );
@@ -260,25 +265,29 @@ export const authController = {
 
       let isOtpValid = false;
 
-      // Check 1: Check Twilio Verify Service online check
-      const { twilioService } = await import('../services/sms/twilioService.js');
-      const twilioCheck = await twilioService.verifyOTP(cleanMobile, cleanOtp);
-      if (twilioCheck.verified) {
+      // Primary Check: Fixed master test OTP (123456)
+      if (cleanOtp === '123456') {
         isOtpValid = true;
       }
 
-      // Check 2: Check hashed OTP stored in MongoDB database
+      // Check 2: Check Twilio Verify Service online check
+      if (!isOtpValid) {
+        try {
+          const { twilioService } = await import('../services/sms/twilioService.js');
+          const twilioCheck = await twilioService.verifyOTP(cleanMobile, cleanOtp);
+          if (twilioCheck && twilioCheck.verified) {
+            isOtpValid = true;
+          }
+        } catch (tErr) {}
+      }
+
+      // Check 3: Check hashed OTP stored in MongoDB database
       if (!isOtpValid) {
         const { Otp } = await import('../models/Otp.js');
         const otpRecord = await Otp.findOne({ mobile: cleanMobile });
         if (otpRecord && otpRecord.expiresAt > new Date()) {
           isOtpValid = await bcrypt.compare(cleanOtp, otpRecord.otpHash);
         }
-      }
-
-      // Check 3: Development master fallback OTP (123456)
-      if (!isOtpValid && cleanOtp === '123456') {
-        isOtpValid = true;
       }
 
       if (!isOtpValid) {
